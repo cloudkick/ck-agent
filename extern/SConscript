@@ -1,0 +1,200 @@
+#
+#  Copyright 2012 Rackspace
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+
+import sys
+import subprocess
+Import("env")
+
+targets = {}
+
+from os.path import join as pjoin
+
+
+if env["PLATFORM"] != "win32":
+  version = subprocess.Popen([env['CC'], '-dumpversion'], env = env['ENV'],
+                          stdout = subprocess.PIPE).stdout.read()
+  version = version.strip().split('.')
+  version = tuple([int(number) for number in version])
+  env['CCVERSION'] = version
+
+luasrc = Split("""lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
+	lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o
+	lundump.o lvm.o lzio.o
+  lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o
+	lstrlib.o loadlib.o linit.o print.o
+  """)
+
+def transform_lua(e):
+  e = e.replace(".o", ".c")
+  return pjoin("lua", "src", e)
+
+luasrc = map(transform_lua, luasrc)
+
+lenv = env.Clone()
+if env["PLATFORM"] != "win32" and env["PLATFORM"] != "freebsd":
+  lenv.Append(CFLAGS=['-DLUA_USE_POPEN'], LIBS=['dl', 'pthread'])
+elif env["PLATFORM"] == "freebsd":
+  lenv.Append(CFLAGS=['-DLUA_USE_POPEN'])
+
+targets['lualib'] = lenv.StaticLibrary('libequuslua', source = luasrc)
+lenv = env.Clone()
+lenv.PrependUnique(LIBS=[targets['lualib']])
+if env["PLATFORM"] != "win32" and env["PLATFORM"] != "freebsd":
+  lenv.Append(LIBS=['dl', 'pthread'])
+targets['luac'] = lenv.Program('luac', source = ['lua/src/luac.c'])[0]
+targets['luacmd'] = lenv.Program('luacmd', source = ['lua/src/lua.c'])[0]
+socksrc = Split("""	luasocket.o
+	timeout.o
+	buffer.o
+	io.o
+	auxiliar.o
+	options.o
+	inet.o
+	tcp.o
+	udp.o
+	except.o
+	select.o
+
+  mime.o
+
+	buffer.o
+	auxiliar.o
+	options.o
+	timeout.o
+	io.o
+""")
+
+if env["PLATFORM"] != "win32":
+  socksrc.extend(Split("usocket.o unix.o"))
+else:
+  socksrc.extend(Split("wsocket.o"))
+
+def transform_sock(e):
+  e = e.replace(".o", ".c")
+  return pjoin("luasocket", "src", e)
+
+socksrc = map(transform_sock, socksrc)
+
+targets['luasocket'] = env.StaticLibrary('libluasocket', source = socksrc)
+
+secsrc = Split("""
+ timeout.o
+ buffer.o
+ io.o
+ context.o
+ ssl.o""")
+
+if env["PLATFORM"] == "win32":
+  secsrc.extend(Split("wsocket.o"))
+elif env["PLATFORM"] != "win32":
+  secsrc.extend(Split("usocket.o"))
+
+
+def transform_sec(e):
+  e = e.replace(".o", ".c")
+  return pjoin("luasec", "src", e)
+
+secsrc = map(transform_sec, secsrc)
+
+targets['luasec'] = env.StaticLibrary('luasec', source = secsrc)
+
+aliensrc = ['alien/src//alien/core.c','alien/src/alien/struct.c']
+lenv = env.Clone()
+if env["PLATFORM"] == "win32":
+  targets['libffi'] = SConscript("alien/libffi-msvc/SConscript")
+  lenv.Append(CPPPATH=['#extern/alien/libffi-msvc/include'])
+  lenv.Append(CPPPATH=['#extern/alien/libffi-msvc/src/x86'])
+else:
+  targets['libffi'] = SConscript("alien/libffi/SConscript")
+  # Hack to get it compiled on Ubuntu 6.06 with old version of gcc
+  if env['CCVERSION'] >= (4, 1, 0):
+    cflags = '-fno-stack-protector'
+  else:
+    cflags = ''
+  lenv.Append(CPPPATH=['#extern/alien/libffi/include'], CFLAGS = cflags)
+
+lenv['CFLAGS'] = filter(lambda x: x != "-Wall", lenv['CFLAGS'])
+targets['libalien'] = lenv.StaticLibrary('libalien', source = aliensrc)
+
+targets['luapack'] = env.StaticLibrary('luapack', source = ['pack/lpack.c'])
+
+lanesrc = Split("""lanes/src/lanes.c lanes/src/threading.c   lanes/src/tools.c""")
+
+lenv = env.Clone()
+lenv.Append(CFLAGS=['-D_GNU_SOURCE', '-fPIC'])
+targets['lualanes'] = lenv.StaticLibrary('lualanes', source=lanesrc)
+
+
+
+### Building libsigar.a
+lenv = env.Clone()
+sigarsrc = Split("""sigar.c
+  sigar_cache.c
+  sigar_fileinfo.c
+  sigar_format.c
+  sigar_getline.c
+  sigar_ptql.c
+  sigar_signal.c
+  sigar_util.c
+""")
+
+lenv.Append(CPPPATH=['#extern/sigar/include'])
+osname = None
+#  aix darwin freebsd hpux linux solaris win32
+if env["PLATFORM"] == "win32":
+  osname = "win32"
+  lenv.Append(CFLAGS=['-DWIN32_LEAN_AND_MEAN', '-D_BIND_TO_CURRENT_MFC_VERSION=1'
+                      '-D_BIND_TO_CURRENT_CRT_VERSION=1', '-D_CRT_SECURE_NO_WARNINGS'])
+elif env["PLATFORM"] == "darwin":
+  osname = "darwin"
+  lenv.AppendUnique(CFLAGS=['-DDARWIN'])
+  lenv.Append(CPPPATH=['/Developer/Headers/FlatCarbon/'])
+elif env["PLATFORM"] == "freebsd":
+  osname = "darwin"
+elif env["PLATFORM"] == "linux2":
+  osname = "linux"
+elif env["PLATFORM"] == "posix": # opensuse is posix
+  osname = "linux"
+else:
+  print "Unkonwn platform %s port me in extern/SConscript" % env["PLATFORM"]
+  sys.exit(-1)
+
+lenv.Append(CPPPATH=['#extern/sigar/src/os/'+ osname])
+
+def transform_sigar(e):
+  return pjoin("sigar", "src", e)
+
+sigarsrc = map(transform_sigar, sigarsrc)
+sigarsrc.extend(lenv.Glob(pjoin(pjoin("sigar", "src","os", osname)+ "/*.c")))
+sigarsrc.extend(lenv.Glob(pjoin(pjoin("sigar", "src","os", osname)+ "/*.cpp")))
+subst = {'@SCM_REVISION@': 'c439f0e2b3edeb1bcad0802027ff17b1ce61230b',
+         '@PACKAGE_STRING@': 'cksigar',
+         '@build@': 'release',
+         '@build_os@': env['PLATFORM'],
+         '@build_cpu@': env['EQUUS_PLATFORM'],
+         '@PACKAGE_VERSION@': '1.7.0',
+         '@VERSION_MAJOR@': '1',
+         '@VERSION_MINOR@': '7',
+         '@VERSION_MAINT@': '0',
+         '@VERSION_BUILD@': '0'}
+sigarver = env.SubstFile('sigar/src/sigar_version_autoconf.c.in', SUBST_DICT = subst)
+sigarsrc.append(sigarver)
+targets['sigarstatic'] = lenv.StaticLibrary('sigarstatic', source=sigarsrc)
+
+targets['lualint'] = env.File('lualint/lualint')
+
+Return("targets")

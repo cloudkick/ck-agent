@@ -1,0 +1,31 @@
+#
+#  Copyright 2012 Rackspace
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+Import("env")
+from os.path import join as pjoin
+
+lenv = env.Clone()
+lenv["ENV"]["LUA_PATH"] = ";".join([pjoin(lenv.Dir(x).get_abspath(), "?.lua") for x in ["#extern/lunit", "#tests"]])
+tests = []
+for x in lenv.Glob('test_*.lua'):
+  s = x.get_path()
+  cname = s[5:-4]
+  tests.append(lenv.Command(str(x)+".test", x, ["'%s' %s $SOURCE" % (str(lenv['eqtest']), cname)]))
+for x in lenv.Glob('unittest_*.lua'):
+  tests.append(lenv.Command(str(x)+".test", x, ["'%s' --unittest $SOURCE" % (str(lenv['eqtest']))]))
+lenv.AlwaysBuild(tests)
+lenv.Depends(tests, lenv['eqtest'])
+Return('tests')

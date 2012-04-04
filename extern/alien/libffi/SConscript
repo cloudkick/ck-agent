@@ -1,0 +1,53 @@
+from os.path import join as pjoin
+
+Import("env")
+
+sources = []
+
+env = env.Clone()
+env['CFLAGS'] = filter(lambda x: x != "-Wall", env['CFLAGS'])
+
+if env['PLATFORM'][:7] == 'freebsd':
+  if env['is64bit']:
+    sources.extend(Split("""src/x86/ffi64.c src/x86/unix64.S src/x86/ffi.c src/x86/sysv.S"""))
+  else:
+    sources.extend(Split("""src/x86/ffi.c src/x86/freebsd.S"""))
+elif env['PLATFORM'] == 'darwin':
+  if env['isPPC']:
+    sources.extend(Split("""src/powerpc/ffi_darwin.c src/powerpc/darwin.S src/powerpc/darwin_closure.S"""))
+  else:
+    sources.extend(Split("""src/x86/ffi.c src/x86/darwin.S src/x86/ffi64.c src/x86/darwin64.S"""))
+elif env['PLATFORM'] == 'linux2' or env['PLATFORM'] == 'posix':
+  if env['is64bit']:
+    sources.extend(Split("""src/x86/ffi64.c src/x86/unix64.S src/x86/ffi.c src/x86/sysv.S"""))
+  else:
+    sources.extend(Split("""src/x86/ffi.c src/x86/sysv.S"""))
+elif env['PLATFORM'] == 'win32':
+    sources.extend(Split("""src/x86/ffi.c src/x86/win32.S"""))
+else:
+  print "Look at Makefile.am and port your platform definition"
+  print "(PLATFORM=%s, 64bit=%d)" % (env['PLATFORM'], env['is64bit'])
+  Exit(1)
+
+sources.extend(Split("""src/debug.c src/prep_cif.c src/types.c
+                 src/raw_api.c src/java_raw_api.c src/closures.c"""))
+
+
+lenv = env.Clone()
+
+lenv.Append(CPPPATH=['include', '.'])
+lenv.Append(CPPFLAGS=['-fexceptions'])
+if env['PLATFORM'] == 'win32':
+  ffconf = lenv.Command('include/ffi.h', 'configure',
+             ['"C:/Program Files/Git/bin/bash" configure --disable-shared'], 
+               chdir=pjoin('extern', 'alien', 'libffi'))
+else:
+  ffconf = lenv.Command('include/ffi.h', 'configure',
+             ['./configure --disable-shared'],
+             chdir=pjoin('extern', 'alien', 'libffi'))
+
+lenv.Depends(sources, ffconf)
+
+libffi = lenv.StaticLibrary('libffi', source=sources)
+
+Return("libffi")

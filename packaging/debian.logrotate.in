@@ -1,0 +1,16 @@
+/var/log/%branding_name%.log {
+	weekly
+	missingok
+	rotate 52
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+	postrotate
+		if [ -f /var/run/%branding_name%.pid ]; then
+			kill -HUP `cat /var/run/%branding_name%.pid` > /dev/null
+		fi
+	endscript
+}
+

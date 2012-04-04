@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -e
+
+CONF="/etc/cloudkick.conf"
+CKCONF="/usr/bin/cloudkick-config"
+
+case "$1" in
+    configure|reconfigure)
+          if [ ! -f ${CONF} ]; then
+            ${CKCONF}
+          fi
+          update-rc.d cloudkick-agent defaults
+          /etc/init.d/cloudkick-agent restart
+    ;;
+esac

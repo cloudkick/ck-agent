@@ -1,0 +1,47 @@
+External code bases used by Equus.
+
+Please use the following format:
+<Project> <Version>
+  <License> 
+  <URL>
+  <Short desc of how we use it>
+  Patches: <desc of local Patches; optional line.>
+
+Lua 5.1.4
+  MIT
+  http://www.lua.org/
+  Core scripting language for Equus
+
+LuaSocket 2.0.2
+  MIT
+  http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/home.html
+  Provides network routines for doing everything
+
+LuaSec 0.4
+  MIT
+  http://luasec.luaforge.net/
+  Encryption support for LuaSocket
+  Patches: Series of commits to fix C namespace conflict with LuaSocket.
+
+Alien 0.5.0
+  MIT
+  http://alien.luaforge.net/
+  http://alien.luaforge.net/alien-0.5.0.tar.gz
+  Bind to arbitraty C fucntions from lua.
+
+Lpack <unversioned, for 5.1>
+  Public Domain
+  http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/#lpack
+  Pack Lua variables into C style structs
+
+Lua Lanes 2.0.5
+  MIT
+  http://akauppi.googlepages.com/lanes-2.0.3-manual.html
+  Parallism for Lua by spawning threads and using message passing.
+  Patches: Modified loading code to load our own modules.
+
+msinttypes r26
+  BSD (3 clause)
+  http://code.google.com/p/msinttypes/
+  Provides portable headers for C99
+

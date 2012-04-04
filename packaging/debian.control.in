@@ -1,0 +1,11 @@
+Package: %branding_name%
+Version: %version_string%
+Section: non-free/net
+Priority: optional
+Architecture: %debian_arch%
+Depends: openssl, lsb-base (>= 3.0-6), cloudkick-config (>= 1.0.1)
+Maintainer: %branding_support_email%
+Provides: %branding_name%
+Homepage: %branding_url%
+Description: %branding_short%
+  %branding_long%

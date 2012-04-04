@@ -1,0 +1,437 @@
+#
+#  Copyright 2012 Rackspace
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+import os
+import re
+import hashlib
+import subprocess
+import SCons
+from os.path import join as pjoin
+from site_scons import ac
+
+Import("appname env extern")
+
+def md5it(input):
+    # python <= 2.4 have different haslib APIs. sux, but we need to support old python.
+    m = hashlib.md5()
+    m.update(input)
+    return m.hexdigest()
+
+def to_bytes(input):
+  output = ""
+  d = [str(ord(i)) for i in input]
+  block_size = 10
+  while len(d):
+    output += ", ".join(d[:block_size])
+    output += ",\n        "
+    d = d[block_size:]
+  return output
+
+# TODO: move to site_scons
+def embed_lua_blob(target, source, env):
+  #print 'embed lua', target, source
+  func = env['LUABLOBFUNC']
+  for s in source:
+    # TODO: use luac built from our source
+    assert(subprocess.Popen([extern['luac'].get_path(), '-p', s.get_path()]).wait() == 0)
+  modules = [[os.path.basename(s.get_path().replace(".lua", "")), s, md5it(s.get_path())] for s in source]
+  header_output = """
+  /* THIS IS A GENERATED HEADER FILE. DO NOT EDIT */
+  #include <string.h>
+  #include <stdint.h>
+  #ifndef _header_%s_h_
+  #define _header_%s_h_
+  int %s_has_module(const char *input);
+  int %s_get_module(const char *input, const char **p, size_t *len);
+  int %s_get_pubkey(const char *input, const char **p, size_t *len);
+  int %s_get_signature(const char *input, const char **p, size_t *len);
+  #endif
+  """ % (func, func, func, func, func, func)
+
+  output = """
+  /* THIS IS A GENERATED C FILE. DO NOT EDIT */
+  #include "%s"
+  """ % (target[1].get_path())
+
+  output += """
+  int %s_has_module(const char *input){
+  """ % (func)
+  for m in modules:
+    output += """
+      if (strcmp(input, "%s") == 0) {
+        return 0;
+      }
+    """ % (m[0])
+  output += """
+    return 1;
+  }
+  """
+  wantpubkey = 0
+  for m in modules:
+    content = m[1].get_contents()
+    bytes = to_bytes(content);
+    output += """
+        static const char const EQUUS_SCRIPT_BODY_%s[] = {%s};
+    """ % (m[2], bytes)
+    sig = m[1].get_path().replace(".lua", ".sig")
+    if os.path.exists(sig):
+      wantpubkey = 1
+      sig = env.File(sig)
+      sigcon = sig.get_contents()
+      bytes = to_bytes(sigcon);
+      output += """
+          static const char const EQUUS_SCRIPT_SIG_%s[] = {%s};
+      """ % (m[2], bytes)
+
+  output += """
+  int %s_get_module(const char *input, const char **p, size_t *len){
+  """ % (func)
+  for m in modules:
+    output += """
+      if (strcmp(input, "%s") == 0) {
+        *p = &EQUUS_SCRIPT_BODY_%s[0];
+        *len = sizeof(EQUUS_SCRIPT_BODY_%s);
+        return 0;
+      }
+    """ % (m[0], m[2], m[2])
+  output += """
+    return 1;
+  }
+  """
+  if wantpubkey:
+    bytes = to_bytes(env['pubkey'].get_contents())
+    output += """
+    int %s_get_pubkey(const char *input, const char **p, size_t *len){
+      static const char const pubkey[] = {%s};
+      *p = &pubkey[0];
+      *len = sizeof(pubkey);
+      return 0;
+    }
+    """ % (func, bytes)
+
+    output += """
+    int %s_get_signature(const char *input, const char **p, size_t *len){
+    """ % (func)
+    for m in modules:
+      sig = m[1].get_path().replace(".lua", ".sig")
+      if os.path.exists(sig):
+        output += """
+          if (strcmp(input, "%s") == 0) {
+            *p = &EQUUS_SCRIPT_SIG_%s[0];
+            *len = sizeof(EQUUS_SCRIPT_SIG_%s);
+            return 0;
+          }
+        """ % (m[0], m[2], m[2])
+    output += """
+      return 1;
+    }
+    """
+
+
+
+  fw = open(target[1].get_abspath(), "wb+")
+  fw.write(header_output)
+
+  fw = open(target[0].get_abspath(), "wb+")
+  fw.write(output)
+
+
+def sig_emitter(target, source, env):
+  return (target, source)
+
+def luac_emitter(target, source, env):
+  for t in target:
+    env.Depends(t, extern['luac'])
+  return (target, source)
+
+lblob = Builder(action = embed_lua_blob, emitter=[sig_emitter, luac_emitter])
+env.Append(BUILDERS = {'LuaBlob' : lblob})
+
+def embed_c_blob(target, source, env):
+  func = env['CBLOBFUNC']
+  s = source[0]
+  content = s.get_contents()
+  bytes = to_bytes(content);
+  key = md5it(s.get_path())
+
+  header_output = """
+  /* THIS IS A GENERATED HEADER FILE. DO NOT EDIT */
+  #include <string.h>
+  #include <stdint.h>
+  #ifndef _header_%s_h_
+  #define _header_%s_h_
+  int %s_get(const char **p, size_t *len);
+  #endif
+  """ % (func, func, func)
+
+  output = """
+  /* THIS IS A GENERATED C FILE. DO NOT EDIT */
+  #include "%s"
+
+  static const char const EQUUS_BLOB_BODY_%s[] = {%s};
+
+  """ % (target[1].get_path(), key, bytes)
+  output += """
+  int %s_get(const char **p, size_t *len){
+  """ % (func)
+  output += """
+        *p = &EQUUS_BLOB_BODY_%s[0];
+        *len = sizeof(EQUUS_BLOB_BODY_%s);
+        return 0;
+    }
+    """ % (key, key)
+
+  fw = open(target[1].get_abspath(), "wb+")
+  fw.write(header_output)
+
+  fw = open(target[0].get_abspath(), "wb+")
+  fw.write(output)
+
+
+cblob = Builder(action = embed_c_blob)
+env.Append(BUILDERS = {'CBlob' : cblob})
+
+lenv = env.Clone()
+lenv['LUABLOBFUNC'] = 'equus_loader'
+mods = SConscript("lua/modules/SConscript")
+luablob = lenv.LuaBlob(['equus_loader_blob.c', 'equus_loader_blob.h'], mods)
+lenv = env.Clone()
+lenv['LUABLOBFUNC'] = 'equus_bootstrap'
+bsfile = 'lua/bootstrap-http.lua'
+if env['LOCAL_DEV']:
+  bsfile = "lua/bootstrap-local.lua"
+bootstrap = lenv.LuaBlob(['equus_bootstrap.c', 'equus_bootstrap.h'], [bsfile])
+
+lenv = env.Clone()
+lenv['LUABLOBFUNC'] = 'equus_bootstrap'
+testbootstrap = lenv.LuaBlob(['equus_testbootstrap.c', 'equus_testbootstrap.h'], ["lua/bootstrap-test.lua"])
+
+lenv.Clone()
+lenv['CBLOBFUNC'] = "equus_pubkey"
+pubkey = lenv.CBlob(['equus_pubkey.c', 'equus_pubkey.h'], lenv['pubkey'])
+
+localdev = [pubkey[0]]
+
+luas = env.Glob("lua/remote/*.lua")
+
+luas = list(set(luas))
+def s2l_builder(target, source, env):
+  orig = SCons.Script.sconscript_reading
+  SCons.Script.sconscript_reading=True
+  output = """
+-- GENERATED LUA MODULE. DO NOT EDIT --
+module(..., package.seeall);
+
+"""
+  conf = Configure(env, custom_tests = {'CheckStructOffset': ac.CheckStructOffset})
+  args = env['S2L_ARGS']
+  for k in args.keys():
+    struct = k
+    output += k.split(" ")[-1]+" = {"
+    headers = "\n".join(["#include <%s>" % s for s in args[k][0]])
+    a = []
+    a.append(["__size", conf.CheckTypeSize(k, headers)])
+    for t in args[k][1]:
+      r = conf.CheckStructOffset(k, headers, t)
+      a.append([t, r])
+      r = conf.CheckTypeSize("(("+k+" *) 0)->"+t, headers)
+      a.append([t+"__size", r])
+    for p in a:
+      output += ""+ p[0] +"="+ str(p[1]) + ","
+    output += "}\n"
+  conf.Finish()
+  fw = open(target[0].get_abspath(), "wb+")
+  fw.write(output)
+  SCons.Script.sconscript_reading = orig
+
+env.Append(BUILDERS = {'Struct2LuaBuilder':  Builder(action = s2l_builder)})
+
+headers = ['sys/param.h', 'sys/mount.h']
+if env['PLATFORM'] != 'darwin' and env['PLATFORM'] != 'freebsd':
+  headers.append('sys/statfs.h')
+env['S2L_ARGS'] = {'struct statfs': [headers,
+                                     ['f_bfree', 'f_blocks', 'f_bsize', 'f_bavail']],
+                   'struct dirent': [['dirent.h'], ['d_name']],
+                   'struct timespec': [['time.h'],
+                                       ['tv_sec',
+                                        'tv_nsec',
+                                      ]],
+                   'struct stat': [['sys/stat.h'],
+                                   ['st_size',
+                                    # bits/stat.h
+                                    ## __time_t
+                                    'st_mtime',
+                                    'st_ctime',
+                                    'st_atime',
+                                    ## struct timespec
+                                    'st_atim',
+                                    'st_mtim',
+                                    'st_ctim',
+                                    ## __time_t OSX/BSD?
+                                    'st_mtimespec',
+                                    'st_ctimespec',
+                                    ]],
+                   'MYSQL_FIELD': [[env['MYSQL_HEADER']],
+                                   ['name',
+                                    'org_name',
+                                    'table',
+                                    'org_table',
+                                    'db',
+                                    'catalog',
+                                    'def',
+                                    'length',
+                                    'max_length',
+                                    'name_length',
+                                    'org_name_length',
+                                    'table_length',
+                                    'org_table_length',
+                                    'db_length',
+                                    'catalog_length',
+                                    'def_length',
+                                    'flags',
+                                    'decimals',
+                                    'charsetnr',
+                                    'type',
+                                    'extension',
+                                    ]],
+                   'MYSQL': [[env['MYSQL_HEADER']],
+                                   ['host',
+                                    ]],
+                   'MYSQL_RES': [[env['MYSQL_HEADER']],
+                                   ['row_count',
+                                    'fields',
+                                    'data',
+                                    'data_cursor',
+                                    'lengths',
+                                    'handle',
+                                    'methods',
+                                    'row',
+                                    'current_row',
+                                    'field_alloc',
+                                    'field_count',
+                                    'current_field',
+                                    'eof',
+                                    'unbuffered_fetch_cancelled',
+                                    'extension',
+                                    ]]}
+s = env.Struct2LuaBuilder('lua/remote/structs.lua',
+                                  SCons.Node.Python.Value(env['S2L_ARGS']))
+
+luas.extend(s)
+luas = list(set([str(x) for x in luas]))
+
+jmxversion = '1.1'
+jmxsrc = env.Java(target = 'classes', source = 'jmx')
+jarfile = env.Jar(target=env.File('lua/remote/jmxquery-%s.jar' % (jmxversion)), \
+                  source=jmxsrc + ['jmx/MANIFEST.MF'])
+
+if env['LOCAL_DEV']:
+  lenv = env.Clone()
+  lenv['LUABLOBFUNC'] = 'equus_localdev'
+  blob = lenv.LuaBlob(['equus_localdev.c', 'equus_localdev.h'], luas)
+  lenv.Depends(blob, sigs)
+  localdev.append(blob[0])
+
+lenv.Clone()
+lenv["ENV"]["LUA_PATH"] = ";".join([pjoin(lenv.Dir("lua/remote").get_abspath(),  "/?.lua"), pjoin(lenv.Dir("lua/modules").get_abspath(), "?.lua")])
+lenv["ENV"]["PATH"] += ":" + lenv.Dir("#/extern/").get_abspath()
+lint = [lenv.Command(str(x)+".lint", x, ["'%s' '%s' -r '$SOURCE' || exit 0" % (str(extern['luacmd']), str(extern['lualint']))]) for x in luas]
+env.AlwaysBuild(lint)
+env.Depends(lint, extern['luacmd'])
+env.Alias('lint', lint)
+
+lenv = env.Clone()
+lenv.Append(SWIGPATH="$CPPPATH")
+lenv.Append(SWIGFLAGS='-lua')
+if env['isMSVC']:
+  lenv.Append(SWIGFLAGS=['-D_WIN32=1'])
+
+if env.get('use_sigar'):
+  lenv.Append(LIBS=[extern['sigarstatic']], CFLAGS=['-DUSE_SIGAR'], SWIGFLAGS=['-DUSE_SIGAR'])
+
+
+USING_SSL=1
+lenv.Append(LIBS=[extern['lualib'],
+                  extern['luasocket'],
+                  extern['luapack'],
+                  extern['lualanes'],
+                  extern['libalien'],
+                  extern['libffi']])
+
+extralibs = []
+if USING_SSL:
+  lenv.Append(LIBS=[extern['luasec']])
+  if env["PLATFORM"] != "win32":
+    # TODO: this is wrong.
+    lenv.Append(LIBS=['ssl', 'crypto'])
+  else:
+    if env['isMSVC']:
+      lenv.Append(LIBS=['ssleay32MTd', 'libeay32MTd'])
+    else:
+      lenv.Append(LIBS=[lenv.File(pjoin(env['SSL_ROOT'], "lib", "MinGW", "ssleay32.a"))])
+      lenv.Append(LIBS=['eay32'])
+
+if env["PLATFORM"] != "win32":
+  lenv.Append(LIBS=['m', 'z'])
+  if env["PLATFORM"] != "darwin" and env["PLATFORM"] != "freebsd":
+    if 0:
+      lenv['LINKCOM'] = lenv['LINKCOM'].replace('_LIBFLAGS', '_LIBFLAGS $LINKSUFFIX')
+      lenv.Append(LINKFLAGS = ['-Wl,-Bstatic'])
+      lenv.Append(LINKSUFFIX = ['-Wl,-Bdynamic', '-lpthread', '-ldl', '-lc'])
+    else:
+      lenv.Append(LIBS=['pthread', 'dl', 'c'])
+  elif env["PLATFORM"] == "freebsd":
+    lenv.Append(LIBS=['pthread', 'c', 'kvm'])
+  else:
+    lenv.Append(LIBS=['pthread', 'c'])
+else:
+  lenv.Append(LIBS=['Advapi32', 'Ws2_32', 'psapi'])
+  # things needed by OpenSSL:
+  lenv.Append(LIBS=['User32', 'Gdi32'])
+  if not env['isMSVC']:
+    lenv.Append(CFLAGS=['-mwindows'])
+    lenv.Append(LIBS=['msvcr90'])
+
+
+lenv.Append(CPPPATH=["#src", "#", "#extern/sigar/include"])
+
+if lenv["PLATFORM"] == "darwin":
+  lenv['FRAMEWORKS'] = ['CoreServices', 'IOKit']
+
+eqsrc = [ 'equus_util.c', 'equus_loader.c', 'equus_service.c', 'mojosetup_luadebugger.c',
+          'equus_portable.c', 'equus_conf.c', 'swig/equus.i', localdev, luablob[0]]
+base = [lenv.Object(o) for o in eqsrc]
+aenv = lenv.Clone()
+if env["PLATFORM"] == "win32":
+  base.append(aenv.RES('equus.rc'))
+  aenv['PDB'] = "%s.pdb" % appname
+  #env['CCPDBFLAGS']  = ['${(PDB and "/Fd%s_incremental.pdb /Zi" % File(PDB)) or ""}']
+aenv.VariantDir('build-agent', '#src', duplicate=0)
+sources = [base, 'build-agent/equus.c', pjoin('build-agent', str(bootstrap[0]))]
+sources.extend(extralibs)
+equus = aenv.Program(appname, source=sources)
+
+aenv = lenv.Clone()
+aenv.Append(CPPFLAGS=['-DEQ_TEST_HARNESS'])
+aenv.VariantDir('build-test', '#src', duplicate=0)
+sources = [base, 'build-test/equus.c', pjoin('build-test', str(testbootstrap[0]))]
+sources.extend(extralibs)
+eqtest = aenv.Program("eqtest", source=sources)
+
+targets = [equus, eqtest]
+
+
+Return("targets")

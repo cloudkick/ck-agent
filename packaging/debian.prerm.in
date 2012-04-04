@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -e
+
+if [ -f /etc/init.d/cloudkick-agent ]; then
+  /etc/init.d/cloudkick-agent stop
+fi

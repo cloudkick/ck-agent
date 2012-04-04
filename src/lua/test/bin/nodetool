@@ -1,0 +1,417 @@
+#!/usr/bin/env python
+import sys
+if sys.argv[5] == "tpstats":
+  print """Pool Name                    Active   Pending      Completed
+FILEUTILS-DELETE-POOL             0         0           5490
+STREAM-STAGE                      0         0              0
+RESPONSE-STAGE                    0         0      587391482
+ROW-READ-STAGE                    0         0        1195169
+LB-OPERATIONS                     0         0              0
+MESSAGE-DESERIALIZER-POOL         0         0     1141093699
+GMFD                              0         0        6730523
+LB-TARGET                         0         0              0
+CONSISTENCY-MANAGER               0         0         391708
+ROW-MUTATION-STAGE                0         0      685906024
+MESSAGE-STREAMING-POOL            0         0              0
+LOAD-BALANCER-STAGE               0         0              0
+FLUSH-SORTER-POOL                 0         0              0
+MEMTABLE-POST-FLUSHER             0         0          13011
+FLUSH-WRITER-POOL                 0         0          13011
+AE-SERVICE-STAGE                  0         0           1432
+HINTED-HANDOFF-POOL               0         0             99"""
+
+if sys.argv[5] == "cfstats":
+  print """Keyspace: system
+  Read Count: 1163
+  Read Latency: 10.437895098882201 ms.
+  Write Count: 76632
+  Write Latency: 0.16753871750704666 ms.
+  Pending Tasks: 0
+    Column Family: LocationInfo
+    SSTable count: 1
+    Space used (live): 1346
+    Space used (total): 1346
+    Memtable Columns Count: 0
+    Memtable Data Size: 0
+    Memtable Switch Count: 6
+    Read Count: 2
+    Read Latency: NaN ms.
+    Write Count: 12
+    Write Latency: 0.000 ms.
+    Pending Tasks: 0
+    Key cache capacity: 1
+    Key cache size: 1
+    Key cache hit rate: NaN
+    Row cache: disabled
+    Compacted row minimum size: 203
+    Compacted row maximum size: 469
+    Compacted row mean size: 306
+
+    Column Family: HintsColumnFamily
+    SSTable count: 0
+    Space used (live): 0
+    Space used (total): 0
+    Memtable Columns Count: 0
+    Memtable Data Size: 0
+    Memtable Switch Count: 53
+    Read Count: 1161
+    Read Latency: 7.319 ms.
+    Write Count: 76620
+    Write Latency: 0.173 ms.
+    Pending Tasks: 0
+    Key cache capacity: 1
+    Key cache size: 1
+    Key cache hit rate: 0.5950413223140496
+    Row cache: disabled
+    Compacted row minimum size: 311
+    Compacted row maximum size: 895873
+    Compacted row mean size: 41958
+
+----------------
+Keyspace: MonitorApp
+  Read Count: 1719693
+  Read Latency: 75.29115576443004 ms.
+  Write Count: -1329918071
+  Write Latency: NaN ms.
+  Pending Tasks: 0
+    Column Family: StatusChangeLog
+    SSTable count: 3
+    Space used (live): 46384220
+    Space used (total): 46384220
+    Memtable Columns Count: 1295
+    Memtable Data Size: 32109
+    Memtable Switch Count: 473
+    Read Count: 119509
+    Read Latency: 13.855 ms.
+    Write Count: 420153
+    Write Latency: 0.035 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 31998
+    Key cache hit rate: 0.34228209919034974
+    Row cache: disabled
+    Compacted row minimum size: 190
+    Compacted row maximum size: 970170
+    Compacted row mean size: 4211
+
+    Column Family: StatusArchive
+    SSTable count: 11
+    Space used (live): 16840302139
+    Space used (total): 16840302139
+    Memtable Columns Count: 427453
+    Memtable Data Size: 10393276
+    Memtable Switch Count: 719
+    Read Count: 187606
+    Read Latency: 80.946 ms.
+    Write Count: 97996156
+    Write Latency: 0.110 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 187112
+    Key cache hit rate: 0.8347553401616812
+    Row cache: disabled
+    Compacted row minimum size: 190
+    Compacted row maximum size: 7673728
+    Compacted row mean size: 85163
+
+    Column Family: Rollup4h
+    SSTable count: 4
+    Space used (live): 520068016
+    Space used (total): 520068016
+    Memtable Columns Count: 98616
+    Memtable Data Size: 1849050
+    Memtable Switch Count: 3788
+    Read Count: 138328
+    Read Latency: 45.672 ms.
+    Write Count: 381486628
+    Write Latency: 0.064 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 200000
+    Key cache hit rate: 0.21760841343316856
+    Row cache: disabled
+    Compacted row minimum size: 194
+    Compacted row maximum size: 50093
+    Compacted row mean size: 1116
+
+    Column Family: Rollup30m
+    SSTable count: 6
+    Space used (live): 3723076097
+    Space used (total): 3723076097
+    Memtable Columns Count: 700804
+    Memtable Data Size: 13140075
+    Memtable Switch Count: 2348
+    Read Count: 140619
+    Read Latency: 97.157 ms.
+    Write Count: 389943917
+    Write Latency: 0.126 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 200000
+    Key cache hit rate: 0.1765519694505581
+    Row cache: disabled
+    Compacted row minimum size: 194
+    Compacted row maximum size: 383270
+    Compacted row mean size: 2779
+
+    Column Family: TextChangeLog
+    SSTable count: 2
+    Space used (live): 5513812
+    Space used (total): 5513812
+    Memtable Columns Count: 60
+    Memtable Data Size: 1560
+    Memtable Switch Count: 474
+    Read Count: 56521
+    Read Latency: 0.651 ms.
+    Write Count: 12042
+    Write Latency: 0.099 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 385
+    Key cache hit rate: 0.8254813600983204
+    Row cache: disabled
+    Compacted row minimum size: 190
+    Compacted row maximum size: 622988
+    Compacted row mean size: 555
+
+    Column Family: AppCounter
+    SSTable count: 0
+    Space used (live): 0
+    Space used (total): 0
+    Memtable Columns Count: 0
+    Memtable Data Size: 0
+    Memtable Switch Count: 0
+    Read Count: 30854
+    Read Latency: 0.137 ms.
+    Write Count: 0
+    Write Latency: NaN ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 0
+    Key cache hit rate: NaN
+    Row cache: disabled
+    Compacted row minimum size: 0
+    Compacted row maximum size: 0
+    Compacted row mean size: 0
+
+    Column Family: NumericArchive
+    SSTable count: 5
+    Space used (live): 6368417098
+    Space used (total): 6368417098
+    Memtable Columns Count: 0
+    Memtable Data Size: 0
+    Memtable Switch Count: 398
+    Read Count: 143798
+    Read Latency: 139.610 ms.
+    Write Count: 116893722
+    Write Latency: 0.047 ms.
+    Pending Tasks: NaN
+    Key cache capacity: 200000
+    Key cache size: 190821
+    Key cache hit rate: 0.4276696007824309
+    Row cache: disabled
+    Compacted row minimum size: 194
+    Compacted row maximum size: 1240376
+    Compacted row mean size: 57237
+
+    Column Family: RollupBookeeper
+    SSTable count: 0
+    Space used (live): 0
+    Space used (total): 0
+    Memtable Columns Count: 0
+    Memtable Data Size: 0
+    Memtable Switch Count: 0
+    Read Count: 30854
+    Read Latency: 0.155 ms.
+    Write Count: 0
+    Write Latency: NaN ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 0
+    Key cache hit rate: NaN
+    Row cache: disabled
+    Compacted row minimum size: 0
+    Compacted row maximum size: 0
+    Compacted row mean size: 0
+
+    Column Family: MetricSummary
+    SSTable count: 2
+    Space used (live): 4293057
+    Space used (total): 4293057
+    Memtable Columns Count: 0
+    Memtable Data Size: 0
+    Memtable Switch Count: 274
+    Read Count: 61554
+    Read Latency: 4.148 ms.
+    Write Count: 8628
+    Write Latency: 0.112 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 26355
+    Key cache hit rate: 0.1362880886426593
+    Row cache: disabled
+    Compacted row minimum size: 190
+    Compacted row maximum size: 2915
+    Compacted row mean size: 348
+
+    Column Family: Rollup20m
+    SSTable count: 7
+    Space used (live): 5520125209
+    Space used (total): 5520125209
+    Memtable Columns Count: 692076
+    Memtable Data Size: 12976425
+    Memtable Switch Count: 3241
+    Read Count: 140010
+    Read Latency: 120.240 ms.
+    Write Count: 394826006
+    Write Latency: 0.066 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 200000
+    Key cache hit rate: 0.15755827077460915
+    Row cache: disabled
+    Compacted row minimum size: 194
+    Compacted row maximum size: 571973
+    Compacted row mean size: 3530
+
+    Column Family: Rollup5m
+    SSTable count: 7
+    Space used (live): 21653275242
+    Space used (total): 21653275242
+    Memtable Columns Count: 320692
+    Memtable Data Size: 6012975
+    Memtable Switch Count: 4429
+    Read Count: 166440
+    Read Latency: 170.868 ms.
+    Write Count: 437539714
+    Write Latency: 0.065 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 200000
+    Key cache hit rate: 0.26822604107910036
+    Row cache: disabled
+    Compacted row minimum size: 194
+    Compacted row maximum size: 2259601
+    Compacted row mean size: 11087
+
+    Column Family: Rollup12h
+    SSTable count: 2
+    Space used (live): 193020511
+    Space used (total): 242170662
+    Memtable Columns Count: 31560
+    Memtable Data Size: 591750
+    Memtable Switch Count: 4795
+    Read Count: 137582
+    Read Latency: 30.311 ms.
+    Write Count: 380595587
+    Write Latency: 0.063 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 200000
+    Key cache hit rate: 0.20795343035343036
+    Row cache: disabled
+    Compacted row minimum size: 194
+    Compacted row maximum size: 17335
+    Compacted row mean size: 906
+
+    Column Family: CheckDetails
+    SSTable count: 1
+    Space used (live): 3246283
+    Space used (total): 3246283
+    Memtable Columns Count: 0
+    Memtable Data Size: 0
+    Memtable Switch Count: 176
+    Read Count: 30854
+    Read Latency: 0.183 ms.
+    Write Count: 2053
+    Write Latency: 0.126 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 0
+    Key cache hit rate: 0.0
+    Row cache: disabled
+    Compacted row minimum size: 3015250
+    Compacted row maximum size: 3245661
+    Compacted row mean size: 3113439
+
+    Column Family: Rollup60m
+    SSTable count: 5
+    Space used (live): 1896193628
+    Space used (total): 1896193628
+    Memtable Columns Count: 108340
+    Memtable Data Size: 2031375
+    Memtable Switch Count: 5474
+    Read Count: 136822
+    Read Latency: 81.057 ms.
+    Write Count: 384958610
+    Write Latency: 0.064 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 200000
+    Key cache hit rate: 0.15087620746141428
+    Row cache: disabled
+    Compacted row minimum size: 194
+    Compacted row maximum size: 193331
+    Compacted row mean size: 1870
+
+    Column Family: ChangeLog
+    SSTable count: 0
+    Space used (live): 0
+    Space used (total): 0
+    Memtable Columns Count: 0
+    Memtable Data Size: 0
+    Memtable Switch Count: 0
+    Read Count: 30854
+    Read Latency: 0.104 ms.
+    Write Count: 0
+    Write Latency: NaN ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 0
+    Key cache hit rate: NaN
+    Row cache: disabled
+    Compacted row minimum size: 0
+    Compacted row maximum size: 0
+    Compacted row mean size: 0
+
+    Column Family: Rollup1d
+    SSTable count: 3
+    Space used (live): 119091889
+    Space used (total): 119091889
+    Memtable Columns Count: 865912
+    Memtable Data Size: 16235850
+    Memtable Switch Count: 4136
+    Read Count: 136634
+    Read Latency: 24.528 ms.
+    Write Count: 380366009
+    Write Latency: 0.070 ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 200000
+    Key cache hit rate: 0.1945091438608499
+    Row cache: disabled
+    Compacted row minimum size: 194
+    Compacted row maximum size: 8994
+    Compacted row mean size: 776
+
+    Column Family: TextArchive
+    SSTable count: 0
+    Space used (live): 0
+    Space used (total): 0
+    Memtable Columns Count: 0
+    Memtable Data Size: 0
+    Memtable Switch Count: 0
+    Read Count: 30854
+    Read Latency: 0.112 ms.
+    Write Count: 0
+    Write Latency: NaN ms.
+    Pending Tasks: 0
+    Key cache capacity: 200000
+    Key cache size: 0
+    Key cache hit rate: NaN
+    Row cache: disabled
+    Compacted row minimum size: 0
+    Compacted row maximum size: 0
+    Compacted row mean size: 0
+
+----------------"""

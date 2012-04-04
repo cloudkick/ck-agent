@@ -1,0 +1,53 @@
+.TH "%branding_name%" 8 "2010-01-12" "%branding_short%" "%branding_name%"
+
+.SH NAME
+%branding_name% \- %branding_short%
+
+.SH "SYNOPSIS"
+ 
+.PP
+.B %branding_name%
+    --config|-c <path>
+    --daemon|-d
+    --help|-h
+    --log|-l <path>
+    --loglevel <ll>
+    --pid|-p <path>
+
+.SH "SUMMARY"
+ 
+.PP
+%branding_name% providers monitoring and statistics gathering services for Cloudkick\&.
+.SH "OPTIONS"
+
+.TP
+\-c --config  <path>
+Path to Cloudkick configuration file.  Default is /etc/cloudkick.conf
+.TP
+\--daemon -d
+Detach and daemonize the agent process.
+.TP
+\-h --help
+Display short help screen.
+.TP
+\--log -l <path> 
+Path to Log File. Default: /var/log/%branding_short%.log
+.TP
+\--loglevel <ll>
+Set the logging verbosity level. Must be one of:
+  nothing, critial, errors, warnings, info, debug, everything, all
+The default is info.
+.TP
+\--pid -p <path> 
+Path to write file with process ID
+
+.SH "FILES"
+.TP
+/etc/cloudkick.conf
+Contains the API key used to submit data to Cloudkick, and should be kept secret.
+
+.SH "OTHER"
+
+.PP
+%branding_name% treats the SIGHUP signal as an indication it should reopen its 
+log files so they can be rotated.

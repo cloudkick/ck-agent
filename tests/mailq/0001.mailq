@@ -1,0 +1,27 @@
+-Queue ID- --Size-- ----Arrival Time---- -Sender/Recipient-------
+92F7852E6C5     2532 Wed Oct 13 07:40:40  MAILER-DAEMON
+                                                          (deferred transport)
+                                         brandon@example.com
+
+A78E952EB01     2129 Tue Oct 12 07:15:22  MAILER-DAEMON
+                                                          (deferred transport)
+                                         brandon@example.com
+
+A75CD52E664     2362 Wed Oct 13 07:40:40  MAILER-DAEMON
+                                                          (deferred transport)
+                                         brandon@example.com
+
+A8CC552EB1C     2123 Tue Oct 12 07:15:22  MAILER-DAEMON
+                                                          (deferred transport)
+                                         brandon@example.com
+
+74CE252E649     2361 Wed Oct 13 07:40:40  MAILER-DAEMON
+                                                          (deferred transport)
+                                         brandon@example.com
+
+853EF52EA7A      440 Fri Oct 15 00:59:12  foobar@cloudkick.com
+                                                          (deferred transport)
+                                         brandon@example.com
+                                         alex@couldkick.com
+
+-- 12 Kbytes in 6 Requests.

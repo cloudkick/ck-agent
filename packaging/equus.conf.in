@@ -1,0 +1,6 @@
+-- %branding_name% configuration file
+--
+--
+
+-- Put your account key in this variable:
+account_key = ""

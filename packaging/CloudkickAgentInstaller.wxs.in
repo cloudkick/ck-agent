@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+  <Product Name='Cloudkick Agent Service'
+           Id='*'
+           UpgradeCode='1F268E9C-6755-4188-A0CD-B314F403D6AE'
+           Language='1033' Codepage='1252' Version='1.%version_string%'
+           Manufacturer='Cloudkick'>
+
+   <Package Id='*' Keywords='Installer'
+      Description="Cloudkick-Agent Installer"
+      Comments='Cloudkick Agent is the component that runs on the monitored server.'
+      Manufacturer='Cloudkick'
+      InstallerVersion='200'
+      Languages='1033' Compressed='yes' SummaryCodepage='1252' />
+
+      <Upgrade Id="1F268E9C-6755-4188-A0CD-B314F403D6AE">
+        <UpgradeVersion OnlyDetect="no" Property="PREVIOUSFOUND"
+           Minimum="1.0.0.0"  IncludeMinimum="yes"
+           Maximum="99.0.0.0" IncludeMaximum="no" />
+      </Upgrade>
+      <InstallExecuteSequence>
+          <RemoveExistingProducts Before="InstallInitialize"/>
+      </InstallExecuteSequence>
+
+    <Media Id='1' Cabinet='CloudkickAgentInstaller.cab' EmbedCab='yes' />
+
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='ProgramFilesFolder' Name='PFiles'>
+          <Directory Id='CLOUDKICKAGENT' Name='Cloudkick Agent'>
+
+              <Component Id='MainExecutable' Guid='C660BC1F-9042-42F2-B64E-2A24077CA999'>
+                <File Id='CloudkickAgentEXE' Name='Cloudkick Agent.exe' DiskId='1' Source='src/cloudkick-agent.exe' KeyPath='yes'>
+                  <Shortcut Id="startmenuCloudkick" Directory="ProgramMenuDir" Name="Cloudkick Agent"
+                    WorkingDirectory='CLOUDKICKAGENT' Advertise="yes" />
+                  <Shortcut Id="desktopCloudkick" Directory="DesktopFolder" Name="Cloudkick Agent"
+                    WorkingDirectory='CLOUDKICKAGENT' Advertise="yes" />
+                </File>
+
+                <ServiceInstall Id="InstallCloudkickAgent"
+                  Name="Cloudkick Agent Service"
+                  DisplayName="Cloudkick Agent Service"
+                  Type="ownProcess"
+                  Start="auto"
+                  ErrorControl="normal"
+                  Description="Provides Cloudkick Agent on-machine monitoring for this server. The agent can record disk, bandwidth, CPU usage, and more. Data collected from the agent goes into Cloudkick's graphing engine, making it easy to visualize what's happening to a server."
+                  >
+
+                  <util:ServiceConfig
+                    FirstFailureActionType="restart"
+                    SecondFailureActionType="restart"
+                    ThirdFailureActionType="restart" />
+
+                </ServiceInstall>                                                           
+
+                <ServiceControl Id="StartControlCloudkickAgent"
+                  Name="Cloudkick Agent Service" Start="install" Wait="no"  />
+                <ServiceControl Id="StopControlCloudkickAgent"
+                  Name="Cloudkick Agent Service" Stop="both" Remove="uninstall" Wait="yes"  />    
+
+              </Component>
+
+              <Directory Id='PLUGINS' Name='plugins'>
+              </Directory>
+
+              <Directory Id='DATA' Name='data'>
+              </Directory>
+
+              <Directory Id='ETC' Name='etc'>
+
+                  <Component Id='ConfigFile' Guid='5269422F-31B5-4390-8501-39CC50069A70'>
+                    <File Id='CloudkickCFG' Name='cloudkick.cfg' DiskId='1' Source='src/cloudkick.cfg' KeyPath='yes'>
+                    </File>
+                  </Component>
+
+              </Directory>
+          </Directory>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder" Name="Programs">
+        <Directory Id="ProgramMenuDir" Name="Cloudkick Agent">
+          <Component Id="ProgramMenuDir" Guid="644DEEAC-62B2-4553-8104-130DF5F2D724">
+            <RemoveFolder Id='ProgramMenuDir' On='uninstall' />
+            <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
+          </Component>
+        </Directory>
+      </Directory>
+
+      <Directory Id="DesktopFolder" Name="Desktop" />
+
+    </Directory>
+
+    <Feature Id='Complete' Level='1'>
+      <ComponentRef Id='MainExecutable' />
+      <ComponentRef Id='ConfigFile' />
+      <ComponentRef Id='ProgramMenuDir' />
+    </Feature>
+    <Icon Id="cloudkick_agent.ico" SourceFile="src/cloudkick-agent.ico" />
+    <Property Id="ARPPRODUCTICON" Value="cloudkick_agent.icoo" />
+  </Product>
+</Wix>
+

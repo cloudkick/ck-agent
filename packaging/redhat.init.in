@@ -1,0 +1,72 @@
+#!/bin/bash
+#
+# %branding_name%      Start/Stop %branding_name%.
+#
+# chkconfig: - 62 38
+# description: %branding_short%
+#
+# processname: %branding_name%
+
+. /etc/init.d/functions
+
+. /etc/sysconfig/network
+
+RETVAL=0
+NAME=%branding_name%
+DAEMON=/usr/sbin/$NAME
+PIDFILE=/var/run/$NAME.pid
+DAEMON_ARGS="--daemon -c /etc/cloudkick.conf -p $PIDFILE"
+
+start() {
+    echo -n $"Starting %branding_name%: "
+    daemon ${DAEMON} ${DAEMON_ARGS}
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/${NAME}
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping %branding_name%: "
+    killproc ${NAME}
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/${NAME}
+    return $RETVAL
+}    
+
+restart() {
+      stop
+    start
+}    
+
+reload() {
+    stop
+    start
+}
+
+case "$1" in
+  start)
+      start
+    ;;
+  stop)
+      stop
+    ;;
+  status)
+    status %branding_name%
+    ;;
+  restart)
+      restart
+    ;;
+  condrestart)
+      [ -f /var/lock/subsys/${NAME} ] && restart || :
+    ;;
+  reload)
+    reload
+    ;;
+  *)
+    echo $"Usage: $0 {start|stop|status|restart|condrestart|reload}" 
+    exit 1
+esac
+
+exit $?

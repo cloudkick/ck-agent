@@ -1,0 +1,59 @@
+
+
+Equus Client Server Protocol
+
+Desgin:
+- Modeled after the memcached protocol:
+  - Simple line & space based commands
+  - Commands can optionally have a trailing blob (like VALUE in memcached)
+- SSL support required, used by default
+- Unlike the memcached protocol, all messages that have a reply, include a
+  <int:message_id>, to uniquely identity the command, so that out of order
+  execution and mapping of messages is easier, since unlike memcached, different
+  checks will have varrying run times.
+
+Terms:
+ - Equus: Agent running on a remote machine.  Used to run monitoring checks
+ - Helen: Server that Equus connects to on startup.
+
+Types:
+  <int> - String repersentation of an integer. int32_t should be used at this
+    time to repersent it in internal structures.
+  <string> - UTF8 string.  No spaces allowed, since parameters are space
+    separated.
+  <blob> - Opaque Blob.  Length should be sent as a separate argument. The 
+    maximum length allowed is 1 megabyte.
+
+Commands:
+
+- hello (equus -> helen)
+    hello <int:protocol_version> <string:equus_version>\n
+
+- error (helen -> equus)
+      error <string:message> (helen -> equus)
+    The equus client did something wrong.  The error message should be
+    written to a logfile or stdout, and then client should perform a backoff/retry,
+    after disconnecting from helen.
+    This message cannot be sent from equus to helen, because helen should never
+    invalid commands to equus, since it knows the version of the equus client --
+    if it is too told it shuld return reload.
+
+- reload (helen -> equus)
+      reload
+    Equus should reload all of its .lua files.  This might be easiest to implement
+    by just restarting Equus from stage0.
+
+- check (helen -> equus)
+      check <string:check_name> <int:message_id> <int:len(args)>\n
+      <blob:args>\n
+    
+    Runs the specified check on the remote equus machine.
+
+- result (equus -> helen)
+      result <int:message_id> <string:check_name> <int:len(result)>
+      <blob:result>\n
+    Returns the results of a check.
+
+TODO:
+ - Figure out PTYs/sshd alternative.
+ - Figure out how to upgrade the equus bianry itself, not just stage0

@@ -1,0 +1,39 @@
+#                                                                                                                                                                            
+#  Copyright 2012 Rackspace
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+#
+
+
+Import("env extern")
+
+mods = {"alien.lua": "../../../extern/alien/src/alien.lua",
+        "lanes.lua": "../../../extern/lanes/src/lanes.lua",
+        "ltn12.lua": "../../../extern/luasocket/src/ltn12.lua",
+        "mime.lua": "../../../extern/luasocket/src/mime.lua",
+        "socket.ftp.lua": "../../../extern/luasocket/src/ftp.lua",
+        "socket.http.lua": "../../../extern/luasocket/src/http.lua",
+        "socket.lua": "../../../extern/luasocket/src/socket.lua",
+        "socket.tp.lua": "../../../extern/luasocket/src/tp.lua",
+        "socket.url.lua": "../../../extern/luasocket/src/url.lua",
+        "ssl.lua": "../../../extern/luasec/src/ssl.lua",
+        }
+
+targets = []
+for m in mods.keys():
+  f = env.File(mods[m])
+  targets.append(env.Command(m, f, Copy("$TARGET", "$SOURCE")))
+
+targets.append(env.File("http_loader.lua"))
+Return("targets")

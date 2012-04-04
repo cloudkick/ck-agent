@@ -1,0 +1,49 @@
+cloudkick-agent on win32
+    
+Blockers:
+    - upgraded 3.0.9 <http://sourceware.org/libffi/>
+    - upgraded 3.0.10rc1 <http://code.google.com/p/libffi-msvc/>
+    libffi is not broken. Windows is broken. Pipes and Sockets do not mix.
+
+
+to activate Windows 2008 Server:
+  run:  oobe/msoobe /a
+  
+Dependencies:
+  - CygWin  (rand) Useful for working on windows:
+        (add c:\cygwin\bin to the %Path% variable)
+
+  - MS Visual Studio 2010 Express (or:)
+      register online:  
+  - MS Visual Studio 2k8 (should work in 2k5, not tested)
+
+  - Python 2.6.x: <http://www.python.org/download/releases/>  (rand: 2.6.5)
+	(rand: add c:\Python<version> to the %Path% variable)
+
+  - SCons >= 1.1: <http://www.scons.org/download.php>         (rand: 1.3.0)
+	(rand: add c:\Python<version>\Scripts to the %Path% variable)
+
+  - OpenSSL for windows: <http://www.slproweb.com/products/Win32OpenSSL.html>
+      "Win32 OpenSSL v0.9.8n" Full installer (8mb) is what you want.
+      (Installed to C:/OpenSSL, but configurable in build.py)
+	(rand: add c:\OpenSSL\bin to the %Path% variable)
+
+  - SWIG for windows: <http://www.swig.org/download.html>
+	  Unzip to any location, e.g. c:\swigwin-1.3.40, and add root to path
+	(rand: e.g.: add c:\swigwin-1.3.40 to the %Path% variable)
+
+  - WiX <http://sourceforge.net/projects/wix/files/>
+	  Install and add to path (C:\Program Files\Windows Installer XML v3\bin)
+
+Likely needed:
+  - Git for windows:
+    <http://code.google.com/p/msysgit/>
+    (Rand: on local VM, just share with host. For build server, will need git)
+
+Building:
+  equus uses scons to build, but scons generates VS project files.
+ 
+  The easiest way to build is just run `scons` in the root directory.
+ 
+  You should be able to also open the MSVC Solution Files, and click on build,
+  which will just run scons underneath.

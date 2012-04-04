@@ -1,0 +1,30 @@
+
+Import("env")
+
+sources = []
+
+sources.extend(Split("""src/closures.c src/debug.c src/java_raw_api.c src/prep_cif.c src/raw_api.c src/types.c src/x86/ffi.c"""))
+
+if env['isMSVC']:
+  env.Append(LINKFLAGS=['-nodefaultlib:MSVCRT', '-nodefaultlib:LIBCMT'])
+
+lenv = env.Clone()
+
+lenv.Append(CPPPATH=['include', 'src/x86', '.'])
+
+
+ffconf = lenv.Command('include/ffi.h', 'configure.awk',
+               'cd extern\\alien\\libffi-msvc && build\\nawk.exe -f configure.awk')
+lenv.Depends(sources, ffconf)
+
+if env['isMSVC']:
+  sources.append("src\\x86\\win32.asm")
+  win32asm = lenv.Command('src/x86/win32.asm', 'src/x86/win32.S',
+  'cd extern\\alien\\libffi-msvc && cl.exe -EP -nologo -DWIN32 -D_WIN32 -D_WINDOWS -I. -Iinclude -Isrc/x86 src\\x86\\win32.S > src\\x86\win32.asm')
+  lenv.Depends('src/x86/win32.asm', 'src/x86/win32.S')
+else: 
+  sources.append("../libffi/win32/win32.S")
+
+libffi = lenv.StaticLibrary('libffi', source=sources)
+
+Return("libffi")
